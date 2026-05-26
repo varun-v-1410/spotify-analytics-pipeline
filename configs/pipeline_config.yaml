@@ -1,0 +1,2 @@
+raw_file_name: spotify_2015_2025_85k.csv
+duckdb_name: spotify_analytics.duckdb

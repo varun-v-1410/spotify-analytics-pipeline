@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.ipynb_checkpoints/
+
+# Virtual environments
+spotify_analytics_piepeline/
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.*
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs (keep folder structure)
+logs/*
+!logs/.gitkeep
+
+# Raw data (keep folder + docs; do not commit large CSV files)
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/README.md
+
+# Generated parquet layers (keep folder structure)
+data/bronze/*
+!data/bronze/.gitkeep
+data/silver/*
+!data/silver/.gitkeep
+data/gold/*
+!data/gold/.gitkeep
+
+# DuckDB warehouse artifacts (keep folder structure)
+database/*
+!database/.gitkeep
