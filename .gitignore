@@ -25,7 +25,6 @@ logs/*
 !logs/.gitkeep
 
 # Raw data (keep folder + docs; do not commit large CSV files)
-data/raw/*
 !data/raw/.gitkeep
 !data/raw/README.md
 
