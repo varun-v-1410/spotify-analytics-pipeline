@@ -4,6 +4,7 @@ import sys
 import duckdb
 import pandas as pd
 import plotly.express as px
+import plotly.io as pio
 import streamlit as st
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -12,20 +13,66 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.utils.paths import DATABASE_DIR
 
+SPOTIFY_GREEN = "#1DB954"
+SPOTIFY_GREEN_LIGHT = "#1ED760"
+SPOTIFY_GREEN_DARK = "#169C46"
+SPOTIFY_BLACK = "#121212"
+PIE_COLORS = px.colors.qualitative.Set2
 
-st.set_page_config(page_title="Spotify Analytics Dashboard", layout="wide")
-st.title("Spotify Analytics Dashboard")
+pio.templates.default = "plotly_dark"
 
-db_path = DATABASE_DIR / "spotify_analytics.duckdb"
+AXIS_TITLE_FONT = dict(size=14, color="#FFFFFF", family="Arial Black")
+CHART_TITLE_FONT = dict(size=16, color="#FFFFFF", family="Arial Black")
 
-if not db_path.exists():
-    st.warning("Database not found. Please run: python scripts/run_pipeline.py")
-    st.stop()
 
-conn = duckdb.connect(str(db_path), read_only=True)
+def format_label(name: str) -> str:
+    return name.replace("_", " ").title()
+
+
+def format_dataframe_columns(df: pd.DataFrame) -> pd.DataFrame:
+    return df.rename(columns=format_label)
+
+
+def style_bold_headers(df: pd.DataFrame):
+    return df.style.set_table_styles(
+        [
+            {
+                "selector": "th",
+                "props": [
+                    ("font-weight", "bold"),
+                    ("text-align", "left"),
+                    ("color", "#FFFFFF"),
+                ],
+            }
+        ],
+        overwrite=False,
+    )
+
+
+def apply_chart_theme(fig, x_title: str | None = None, y_title: str | None = None):
+    fig.update_layout(
+        paper_bgcolor=SPOTIFY_BLACK,
+        plot_bgcolor="#181818",
+        font_color="#FFFFFF",
+        title_font=CHART_TITLE_FONT,
+    )
+    if x_title:
+        fig.update_xaxes(title_text=format_label(x_title), title_font=AXIS_TITLE_FONT)
+    if y_title:
+        fig.update_yaxes(title_text=format_label(y_title), title_font=AXIS_TITLE_FONT)
+    return fig
+
+
+def apply_colorbar_title(fig, title: str = "Total Streams"):
+    fig.update_layout(
+        coloraxis_colorbar=dict(
+            title=dict(text=title, font=AXIS_TITLE_FONT),
+        )
+    )
+    return fig
+
 
 def sql_literal(value: str) -> str:
-    # Minimal escaping for safe local dashboard usage.
     return "'" + str(value).replace("'", "''") + "'"
 
 
@@ -35,6 +82,45 @@ def build_in_clause(values: list[str], column_sql: str) -> str:
     literals = ",".join(sql_literal(v) for v in values)
     return f"{column_sql} in ({literals})"
 
+
+st.set_page_config(
+    page_title="Spotify Analytics Dashboard",
+    layout="wide",
+    page_icon="🎧",
+)
+
+st.markdown(
+    f"""
+    <style>
+        .stApp {{
+            background-color: {SPOTIFY_BLACK};
+        }}
+        h1, h2, h3 {{
+            color: #FFFFFF !important;
+        }}
+        [data-testid="stMetricValue"] {{
+            color: {SPOTIFY_GREEN} !important;
+        }}
+        [data-testid="stMetricLabel"] {{
+            color: #B3B3B3 !important;
+        }}
+        [data-testid="stSidebar"] {{
+            background-color: #181818;
+        }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.title("Spotify Analytics Dashboard")
+
+db_path = DATABASE_DIR / "spotify_analytics.duckdb"
+
+if not db_path.exists():
+    st.warning("Database not found. Please run: python scripts/run_pipeline.py")
+    st.stop()
+
+conn = duckdb.connect(str(db_path), read_only=True)
 
 st.sidebar.header("Filters")
 
@@ -163,15 +249,22 @@ left, right = st.columns(2)
 
 with left:
     st.subheader("Top Tracks")
-    st.dataframe(top_tracks, use_container_width=True, hide_index=True)
+    top_tracks_display = format_dataframe_columns(top_tracks)
+    st.dataframe(
+        style_bold_headers(top_tracks_display),
+        width="stretch",
+        hide_index=True,
+    )
 
     fig_genre = px.pie(
         genre_performance.head(10),
         names="genre",
         values="total_streams",
         title="Top Genre Share",
+        color_discrete_sequence=PIE_COLORS,
     )
-    st.plotly_chart(fig_genre, use_container_width=True)
+    apply_chart_theme(fig_genre)
+    st.plotly_chart(fig_genre, width="stretch")
 
 with right:
     st.subheader("Top Artists")
@@ -180,20 +273,37 @@ with right:
         x="total_streams",
         y="artist_name",
         orientation="h",
-        title="Top Artists by Streams",
+        title="Top Artists By Streams",
+        color="total_streams",
+        color_continuous_scale=[[0, SPOTIFY_GREEN_DARK], [1, SPOTIFY_GREEN]],
     )
-    st.plotly_chart(fig_artists, use_container_width=True)
+    apply_chart_theme(fig_artists, x_title="total_streams", y_title="artist_name")
+    apply_colorbar_title(fig_artists)
+    st.plotly_chart(fig_artists, width="stretch")
 
     fig_country = px.bar(
         country_performance.sort_values("total_streams", ascending=True),
         x="total_streams",
         y="country",
         orientation="h",
-        title="Top Countries by Streams",
+        title="Top Countries By Streams",
+        color="total_streams",
+        color_continuous_scale=[[0, SPOTIFY_GREEN_DARK], [1, SPOTIFY_GREEN]],
     )
-    st.plotly_chart(fig_country, use_container_width=True)
+    apply_chart_theme(fig_country, x_title="total_streams", y_title="country")
+    apply_colorbar_title(fig_country)
+    st.plotly_chart(fig_country, width="stretch")
 
 st.subheader("Monthly Streaming Trend")
-monthly["year_month"] = pd.to_datetime(monthly["year_month"] + "-01")
-fig_monthly = px.line(monthly, x="year_month", y="total_streams", markers=True)
-st.plotly_chart(fig_monthly, use_container_width=True)
+monthly["year_month"] = pd.to_datetime(monthly["year_month"] + "-01", format="%Y-%m-%d")
+fig_monthly = px.line(
+    monthly,
+    x="year_month",
+    y="total_streams",
+    markers=True,
+    title="Monthly Streams",
+    color_discrete_sequence=[SPOTIFY_GREEN],
+)
+fig_monthly.update_traces(line_color=SPOTIFY_GREEN, marker_color=SPOTIFY_GREEN_LIGHT)
+apply_chart_theme(fig_monthly, x_title="year-month", y_title="total_streams")
+st.plotly_chart(fig_monthly, width="stretch")
