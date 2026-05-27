@@ -39,3 +39,6 @@ data/gold/*
 # DuckDB warehouse artifacts (keep folder structure)
 database/*
 !database/.gitkeep
+
+#Powershell scripts
+run_etl_and_dashboard.ps1

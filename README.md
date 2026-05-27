@@ -79,7 +79,7 @@ data/raw/spotify_2015_2025_85k.csv
 
 See the [Dataset](#dataset) section and `data/raw/README.md` for details.
 
-## Run ETL Pipeline
+## Run ETL Pipeline (optional)
 
 ```bash
 python scripts/run_pipeline.py
@@ -97,6 +97,7 @@ This will:
 ```bash
 streamlit run dashboards/app.py
 ```
+This runs both Dashboard and ETL pipeline together. Did this to run streamlit and etl together in streamlit deployment.
 
 Dashboard includes:
 
@@ -105,14 +106,6 @@ Dashboard includes:
 - Genre distribution
 - Monthly stream trend
 - Country performance
-
-### One-click (PowerShell)
-
-Runs ETL and then starts the dashboard:
-
-```powershell
-.\run_etl_and_dashboard.ps1
-```
 
 The dashboard sidebar includes filters for `Genre`, `Country`, and `Year`.
 
