@@ -12,6 +12,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.paths import DATABASE_DIR
+from scripts.run_pipeline import run_pipeline
 
 SPOTIFY_GREEN = "#1DB954"
 SPOTIFY_GREEN_LIGHT = "#1ED760"
@@ -24,7 +25,7 @@ pio.templates.default = "plotly_dark"
 AXIS_TITLE_FONT = dict(size=14, color="#FFFFFF", family="Arial Black")
 CHART_TITLE_FONT = dict(size=16, color="#FFFFFF", family="Arial Black")
 
-
+run_pipeline()
 def format_label(name: str) -> str:
     return name.replace("_", " ").title()
 
